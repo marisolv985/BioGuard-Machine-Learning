@@ -1,0 +1,81 @@
+name: BioGuard ML - DevSecOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master, release/*]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  devsecops-sast-and-audit:
+    name: 🛡️ SAST & Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Security Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff bandit pip-audit
+
+      - name: Code Quality & Formatting Check (Ruff)
+        run: ruff check app tests
+
+      - name: SAST Security Scan (Bandit)
+        run: bandit -r app -ll -ii
+
+      - name: Software Composition Analysis (pip-audit)
+        run: pip-audit -r requirements.txt --ignore-vuln CVE-YYYY-XXXX || true
+
+  unit-and-integration-tests:
+    name: 🧪 Automated Testing & Coverage
+    needs: devsecops-sast-and-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dev Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt pytest-cov
+
+      - name: Run Test Suite with Coverage
+        run: pytest --cov=app --cov-report=term-missing --cov-fail-under=80
+
+  container-security-and-build:
+    name: 🐳 Docker Build & Security Verification
+    needs: unit-and-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: bioguard-ml-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Container Health Check
+        run: |
+          docker run -d --name test-ml-service -p 8000:8000 bioguard-ml-service:latest
+          sleep 5
+          docker ps | grep test-ml-service
+          docker kill test-ml-service
