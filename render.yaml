@@ -1,0 +1,78 @@
+services:
+  - type: web
+    name: bioguard-ml
+    runtime: python
+    plan: free
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    envVars:
+      - key: BIOGUARD_APP_ENV
+        value: production
+
+      - key: BIOGUARD_APP_VERSION
+        value: 2.0.0
+
+      - key: BIOGUARD_DEBUG
+        value: "false"
+
+      - key: BIOGUARD_HOST
+        value: 0.0.0.0
+
+      - key: BIOGUARD_LOG_LEVEL
+        value: INFO
+
+      - key: BIOGUARD_MONGO_URI
+        sync: false
+
+      - key: BIOGUARD_SOURCE_DB
+        value: bioguard
+
+      - key: BIOGUARD_ML_DB
+        value: bioguard_ml
+
+      - key: BIOGUARD_SERVICE_AUDIENCE
+        value: ml-service
+
+      - key: BIOGUARD_SERVICE_ISSUER
+        value: BioGuardApi
+
+      - key: BIOGUARD_SERVICE_TOKEN_SECRET
+        sync: false
+
+      - key: BIOGUARD_PREDICTOR_ACTIVO
+        value: baseline
+
+      - key: BIOGUARD_UMBRAL_CRITICO
+        value: "0.85"
+
+      - key: BIOGUARD_BASELINE_PESO_PEOR_SENAL
+        value: "0.6"
+
+      - key: BIOGUARD_PROBABILIDAD_MOCK
+        value: "0.85"
+
+      - key: BIOGUARD_WINDOW_SIZE
+        value: "12"
+
+      - key: BIOGUARD_WINDOW_HORIZON_MIN
+        value: "120"
+
+      - key: BIOGUARD_MIN_LECTURAS_BASELINE
+        value: "50"
+
+      - key: BIOGUARD_MODELO_MIN_MUESTRAS
+        value: "30"
+
+      - key: BIOGUARD_CORS_ORIGINS
+        value: '[]'
+
+      - key: BIOGUARD_WORKER_SYNC_ENABLED
+        value: "true"
+
+      - key: BIOGUARD_FEATURES_TTL_DAYS
+        value: "90"
+
+      - key: BIOGUARD_RETRAIN_CRON
+        value: "0 3 * * 0"
